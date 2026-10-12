@@ -31,9 +31,12 @@
 - [x] Listagem de propostas do fornecedor.
 
 ## Fase 4 — Contratação e confiança
-- [ ] Comparador de propostas.
-- [ ] Aceite de proposta.
-- [ ] Histórico de contratação.
+- [ ] Comparador estruturado de propostas.
+- [ ] Aceite de proposta pelo contratante.
+- [ ] Alteração automática das demais propostas para recusadas.
+- [ ] Criação do registro de contratação (`hirings`).
+- [ ] Histórico de contratação para as duas partes.
+- [ ] Início e conclusão do serviço.
 - [ ] Avaliações vinculadas a serviço concluído.
 - [ ] Indicadores de prazo, garantia e valor.
 

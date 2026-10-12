@@ -11,13 +11,14 @@
 - [ ] Recuperação de senha por e-mail.
 
 ## Fase 2 — Perfil do fornecedor
-- [ ] Seleção de categorias de serviço.
-- [ ] Regiões/cidades atendidas.
-- [ ] Perfil público do fornecedor.
-- [ ] Portfólio e fotos.
+- [x] Seleção de categorias de serviço.
+- [x] Regiões/cidades atendidas.
+- [x] Perfil público do fornecedor.
+- [x] Portfólio inicial de trabalhos.
+- [x] Configuração de atendimento emergencial.
+- [ ] Upload direto de fotos do portfólio.
 - [ ] Upload de documentos.
 - [ ] Selo de fornecedor verificado.
-- [ ] Configuração de atendimento emergencial.
 
 ## Fase 3 — Solicitações e marketplace
 - [ ] Criação de solicitação de serviço.

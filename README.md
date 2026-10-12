@@ -18,13 +18,15 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 1. Cadastro e autenticação
 2. Perfil do fornecedor, categorias e regiões atendidas
 3. Perfil público e portfólio
-4. Solicitação de orçamento
-5. Envio e comparação de propostas
-6. Seleção/contratação de fornecedor
-7. Avaliação pós-serviço
-8. Solicitações urgentes (“Preciso Agora”)
-9. Histórico de contratações
-10. Base para planos pagos do contratante
+4. Solicitação de serviço com fotos protegidas
+5. Matching por categoria/região
+6. Painel de oportunidades do fornecedor
+7. Envio e edição de propostas
+8. Comparação e contratação
+9. Avaliação pós-serviço
+10. Solicitações urgentes (“Preciso Agora”)
+11. Histórico de contratações
+12. Base para planos pagos do contratante
 
 ## Stack inicial
 
@@ -42,6 +44,7 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 Migrações atuais:
 
 - `001_supplier_portfolio.sql` — cria o portfólio público dos fornecedores.
+- `002_service_request_photos.sql` — adiciona fotos protegidas às solicitações de serviço.
 
 ## Perfil do fornecedor
 
@@ -54,13 +57,27 @@ O fornecedor pode configurar gratuitamente:
 - participação em chamados emergenciais (“Preciso Agora”);
 - portfólio de trabalhos realizados.
 
-Telefone e e-mail não são exibidos diretamente no perfil público. O contato será tratado dentro do fluxo de solicitação/proposta.
+Telefone e e-mail não são exibidos diretamente no perfil público. O contato é tratado dentro do fluxo de solicitação/proposta.
+
+## Marketplace já implementado
+
+O contratante pode publicar uma solicitação com categoria, descrição, localidade, data desejada, urgência e até cinco fotos. As fotos ficam em `storage/request-photos`, fora da pasta pública, e só são servidas por uma rota autenticada.
+
+O matching inicial usa:
+
+- categoria selecionada pelo fornecedor;
+- cidade base ou cidade/região cadastrada pelo fornecedor;
+- atendimento emergencial habilitado quando a solicitação for “Preciso Agora”.
+
+O fornecedor compatível vê a oportunidade, acessa os detalhes e pode enviar ou editar gratuitamente uma proposta com valor, prazo, garantia e observações.
+
+A geolocalização por distância real e o uso efetivo do raio em quilômetros serão implementados na fase específica de geolocalização.
 
 ## Segurança
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF e o perfil público não expõe dados pessoais de contato nesta fase.
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos no perfil público e fotos de solicitações exigem autorização para visualização.
 
 ## Status
 

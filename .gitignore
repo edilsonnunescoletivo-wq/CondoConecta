@@ -4,6 +4,8 @@
 /vendor/
 /storage/logs/*.log
 /storage/cache/*
+/storage/request-photos/*
+!/storage/request-photos/.gitkeep
 .DS_Store
 Thumbs.db
 .idea/

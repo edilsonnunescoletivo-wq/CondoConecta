@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-$appName = 'CondoConecta';
+require __DIR__ . '/bootstrap.php';
+
+use App\Core\Auth;
+
+$appName = (string) ($config['name'] ?? 'CondoConecta');
 $categories = [
     'Elétrica', 'Hidráulica', 'Bombas e motores', 'Piscinas', 'Elevadores',
     'Geradores', 'Portões e acesso', 'CFTV', 'Jardinagem', 'Pintura',
@@ -15,7 +19,7 @@ $categories = [
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="CondoConecta conecta condomínios e administradoras a fornecedores locais qualificados.">
-    <title><?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?> — fornecedores para condomínios</title>
+    <title><?= e($appName) ?> — fornecedores para condomínios</title>
     <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
@@ -25,7 +29,7 @@ $categories = [
         <nav aria-label="Navegação principal">
             <a href="#como-funciona">Como funciona</a>
             <a href="#categorias">Serviços</a>
-            <a class="button button-ghost" href="#cadastro">Entrar</a>
+            <a class="button button-ghost" href="<?= Auth::check() ? 'painel.php' : 'login.php' ?>"><?= Auth::check() ? 'Meu painel' : 'Entrar' ?></a>
         </nav>
     </div>
 </header>
@@ -38,8 +42,8 @@ $categories = [
                 <h1>Encontre o fornecedor certo. <span>Mais perto, mais rápido e com histórico.</span></h1>
                 <p class="hero-copy">Solicite orçamentos, compare propostas e contrate fornecedores da região em um único lugar. Para o fornecedor, o cadastro e o envio de propostas são gratuitos.</p>
                 <div class="hero-actions">
-                    <a class="button button-primary" href="#cadastro">Sou condomínio</a>
-                    <a class="button button-secondary" href="#cadastro">Sou fornecedor</a>
+                    <a class="button button-primary" href="cadastro.php?perfil=contratante">Quero contratar serviços</a>
+                    <a class="button button-secondary" href="cadastro.php?perfil=fornecedor">Quero oferecer serviços</a>
                 </div>
                 <div class="trust-row">
                     <span>✓ Fornecedores regionais</span>
@@ -58,7 +62,7 @@ $categories = [
                     <strong>8 fornecedores disponíveis</strong>
                     <span>na região e categoria selecionadas</span>
                 </div>
-                <button type="button" class="button button-primary button-full">Solicitar propostas</button>
+                <a class="button button-primary button-full" href="cadastro.php?perfil=contratante">Solicitar propostas</a>
             </aside>
         </div>
     </section>
@@ -81,7 +85,7 @@ $categories = [
             <h2 class="section-title">Serviços que um condomínio precisa no dia a dia</h2>
             <div class="category-grid">
                 <?php foreach ($categories as $category): ?>
-                    <div class="category-chip"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="category-chip"><?= e($category) ?></div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -93,13 +97,13 @@ $categories = [
                 <span class="badge">FORNECEDOR</span>
                 <h2>Divulgue seus serviços gratuitamente</h2>
                 <p>Crie seu perfil, escolha as categorias e regiões atendidas, receba oportunidades e envie propostas sem pagar por lead.</p>
-                <a class="button button-secondary" href="#">Quero me cadastrar</a>
+                <a class="button button-secondary" href="cadastro.php?perfil=fornecedor">Quero me cadastrar grátis</a>
             </article>
             <article class="audience-card audience-highlight">
                 <span class="badge">CONDOMÍNIO / ADMINISTRADORA</span>
                 <h2>Centralize suas compras e contratações</h2>
                 <p>Tenha cotações, propostas, histórico, avaliações e documentos organizados para decidir com mais segurança.</p>
-                <a class="button button-primary" href="#">Conhecer planos</a>
+                <a class="button button-primary" href="cadastro.php?perfil=contratante">Criar conta de contratante</a>
             </article>
         </div>
     </section>

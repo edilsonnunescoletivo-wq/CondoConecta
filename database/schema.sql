@@ -1,3 +1,5 @@
+-- CondoConecta: schema base.
+-- Após este arquivo, execute as migrações de database/migrations em ordem numérica.
 SET NAMES utf8mb4;
 SET time_zone = '-03:00';
 

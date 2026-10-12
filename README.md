@@ -16,8 +16,8 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 ## MVP
 
 1. Cadastro e autenticação
-2. Cadastro de fornecedores e categorias
-3. Área de atendimento por cidade/região
+2. Perfil do fornecedor, categorias e regiões atendidas
+3. Perfil público e portfólio
 4. Solicitação de orçamento
 5. Envio e comparação de propostas
 6. Seleção/contratação de fornecedor
@@ -33,10 +33,35 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 - HTML/CSS/JavaScript
 - Composer / PSR-4
 
+## Instalação do banco
+
+1. Execute `database/schema.sql` em um banco vazio.
+2. Execute, em ordem, os arquivos de `database/migrations/`.
+3. Copie `.env.example` para `.env` e configure apenas no ambiente de hospedagem/local.
+
+Migrações atuais:
+
+- `001_supplier_portfolio.sql` — cria o portfólio público dos fornecedores.
+
+## Perfil do fornecedor
+
+O fornecedor pode configurar gratuitamente:
+
+- nome público e apresentação;
+- categorias de serviço;
+- cidade base e raio de atendimento;
+- cidades/regiões atendidas;
+- participação em chamados emergenciais (“Preciso Agora”);
+- portfólio de trabalhos realizados.
+
+Telefone e e-mail não são exibidos diretamente no perfil público. O contato será tratado dentro do fluxo de solicitação/proposta.
+
 ## Segurança
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF e o perfil público não expõe dados pessoais de contato nesta fase.
+
 ## Status
 
-Projeto em desenvolvimento inicial.
+MVP em desenvolvimento na branch `develop/mvp-inicial` e revisado pelo PR #1.

@@ -21,12 +21,14 @@
 - [ ] Selo de fornecedor verificado.
 
 ## Fase 3 — Solicitações e marketplace
-- [ ] Criação de solicitação de serviço.
-- [ ] Upload de fotos da necessidade.
-- [ ] Níveis de urgência: normal, urgente e Preciso Agora.
-- [ ] Match de fornecedores por categoria/região.
-- [ ] Painel de oportunidades do fornecedor.
-- [ ] Envio e edição de propostas.
+- [x] Criação de solicitação de serviço.
+- [x] Upload de fotos da necessidade com acesso protegido.
+- [x] Níveis de urgência: normal, urgente e Preciso Agora.
+- [x] Match de fornecedores por categoria/região.
+- [x] Painel de oportunidades do fornecedor.
+- [x] Envio e edição de propostas.
+- [x] Listagem de solicitações do contratante.
+- [x] Listagem de propostas do fornecedor.
 
 ## Fase 4 — Contratação e confiança
 - [ ] Comparador de propostas.
@@ -36,7 +38,7 @@
 - [ ] Indicadores de prazo, garantia e valor.
 
 ## Fase 5 — Preciso Agora
-- [ ] Disponibilidade emergencial.
+- [x] Disponibilidade emergencial básica por região.
 - [ ] Geolocalização/raio de atendimento.
 - [ ] Ordenação por proximidade.
 - [ ] Notificações em tempo útil.

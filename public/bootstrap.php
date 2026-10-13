@@ -73,8 +73,19 @@ function redirect(string $url): void
     exit;
 }
 
-// Rotas comerciais que exigem teste ou assinatura válida do contratante.
 $currentScript = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+
+// Normaliza valores monetários enviados na proposta antes do processamento da tela.
+// Aceita formatos brasileiros (1.234,56) e internacionais (1234.56) sem alterar
+// a compatibilidade com o processamento legado da solicitação.
+if ($currentScript === 'solicitacao.php' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && array_key_exists('amount', $_POST)) {
+    $normalizedAmount = \App\Core\Money::parse((string) $_POST['amount']);
+    if ($normalizedAmount !== null) {
+        $_POST['amount'] = number_format($normalizedAmount, 2, ',', '');
+    }
+}
+
+// Rotas comerciais que exigem teste ou assinatura válida do contratante.
 if ($currentScript === 'nova-solicitacao.php' && \App\Core\Auth::check()) {
     $sessionUser = \App\Core\Auth::user();
     if (($sessionUser['role'] ?? '') === 'contratante' && ($sessionUser['terms_version'] ?? null) === \App\Core\Terms::VERSION) {

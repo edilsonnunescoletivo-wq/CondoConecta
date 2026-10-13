@@ -8,17 +8,19 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Marketplace;
+use App\Core\Verification;
 use Throwable;
 
 $user = Auth::requireAuth();
 $profile = null;
 $dbWarning = null;
-$supplierStats = ['categories' => 0, 'regions' => 0, 'portfolio' => 0, 'opportunities' => 0, 'proposals' => 0, 'hirings' => 0, 'rating_count' => 0, 'rating' => null];
+$supplierStats = ['categories' => 0, 'regions' => 0, 'portfolio' => 0, 'opportunities' => 0, 'proposals' => 0, 'hirings' => 0, 'rating_count' => 0, 'rating' => null, 'documents' => 0, 'pending_documents' => 0];
 $contractorStats = ['open_requests' => 0, 'proposals' => 0, 'hirings' => 0];
 
 try {
     $pdo = Database::connection($config);
     if ($user['role'] === 'fornecedor') {
+        Verification::refreshSeal($pdo, (int) $user['id']);
         $stmt = $pdo->prepare('SELECT id, trade_name AS display_name, description, city, state, service_radius_km, emergency_service, verified_at FROM supplier_profiles WHERE user_id = :user_id LIMIT 1');
     } elseif ($user['role'] === 'contratante') {
         $stmt = $pdo->prepare('SELECT display_name, city, state, account_type FROM contractor_profiles WHERE user_id = :user_id LIMIT 1');
@@ -63,6 +65,12 @@ try {
         $ratingData = $ratingStmt->fetch();
         $supplierStats['rating_count'] = (int) ($ratingData['total'] ?? 0);
         $supplierStats['rating'] = $ratingData && $ratingData['average_rating'] !== null ? (float) $ratingData['average_rating'] : null;
+
+        $docStats = $pdo->prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN status='pendente' THEN 1 ELSE 0 END) AS pending FROM supplier_documents WHERE supplier_user_id = :user_id");
+        $docStats->execute(['user_id' => $user['id']]);
+        $docData = $docStats->fetch() ?: [];
+        $supplierStats['documents'] = (int) ($docData['total'] ?? 0);
+        $supplierStats['pending_documents'] = (int) ($docData['pending'] ?? 0);
     }
 
     if ($user['role'] === 'contratante') {
@@ -95,7 +103,7 @@ $supplierProfileComplete = $isSupplier && $profile && $supplierStats['categories
 <main class="container dashboard-shell">
     <?php if (isset($_GET['novo'])): ?><div class="alert alert-success">Conta criada com sucesso. Bem-vindo ao CondoConecta!</div><?php endif; ?>
     <?php if ($dbWarning): ?><div class="alert alert-error"><?= e($dbWarning) ?></div><?php endif; ?>
-    <section class="dashboard-hero"><div><span class="badge"><?= $isSupplier ? 'FORNECEDOR' : ($user['role'] === 'contratante' ? 'CONTRATANTE' : 'ADMINISTRADOR') ?></span><h1>Olá, <?= e($displayName) ?>.</h1><p><?= $isSupplier ? 'Seu espaço para receber oportunidades e enviar propostas.' : 'Seu espaço para solicitar serviços, comparar propostas e acompanhar contratações.' ?></p><?php if ($location): ?><span class="location-pill">📍 <?= e($location) ?></span><?php endif; ?></div><?php if ($isSupplier): ?><div class="account-status"><strong>Cadastro gratuito</strong><span>Sem cobrança por lead ou proposta no MVP</span><?php if ($supplierProfileComplete): ?><span class="status-tag status-ok">Perfil de serviços configurado</span><?php else: ?><span class="status-tag status-pending">Complete seu perfil para receber oportunidades</span><?php endif; ?></div><?php endif; ?></section>
+    <section class="dashboard-hero"><div><span class="badge"><?= $isSupplier ? 'FORNECEDOR' : ($user['role'] === 'contratante' ? 'CONTRATANTE' : 'ADMINISTRADOR') ?></span><h1>Olá, <?= e($displayName) ?>.</h1><p><?= $isSupplier ? 'Seu espaço para receber oportunidades e enviar propostas.' : ($user['role'] === 'contratante' ? 'Seu espaço para solicitar serviços, comparar propostas e acompanhar contratações.' : 'Administre a confiança e a operação da plataforma.') ?></p><?php if ($location): ?><span class="location-pill">📍 <?= e($location) ?></span><?php endif; ?></div><?php if ($isSupplier): ?><div class="account-status"><strong>Cadastro gratuito</strong><span>Sem cobrança por lead ou proposta no MVP</span><?php if ($supplierProfileComplete): ?><span class="status-tag status-ok">Perfil de serviços configurado</span><?php else: ?><span class="status-tag status-pending">Complete seu perfil para receber oportunidades</span><?php endif; ?></div><?php endif; ?></section>
 
     <?php if ($isSupplier): ?>
         <section class="dashboard-grid">
@@ -103,7 +111,7 @@ $supplierProfileComplete = $isSupplier && $profile && $supplierStats['categories
             <article class="dash-card"><span class="dash-icon">📄</span><h2>Minhas propostas</h2><strong class="dash-number"><?= $supplierStats['proposals'] ?></strong><p>Acompanhe propostas em análise e resultados.</p><a class="button button-secondary" href="minhas-propostas.php">Abrir propostas</a></article>
             <article class="dash-card"><span class="dash-icon">🤝</span><h2>Contratações</h2><strong class="dash-number"><?= $supplierStats['hirings'] ?></strong><p>Acompanhe os serviços em que sua proposta foi escolhida.</p><a class="button button-secondary" href="minhas-contratacoes.php">Abrir contratações</a></article>
             <article class="dash-card"><span class="dash-icon">🧰</span><h2>Perfil de serviços</h2><p>Defina categorias, regiões atendidas, apresentação e portfólio.</p><div class="profile-progress"><span><?= $supplierStats['categories'] ?> categoria(s)</span><span>•</span><span><?= $supplierStats['regions'] ?> região(ões)</span><span>•</span><span><?= $supplierStats['portfolio'] ?> trabalho(s)</span></div><div class="card-actions"><a class="button button-secondary" href="perfil-fornecedor.php">Configurar perfil</a><?php if ($profile): ?><a class="button button-ghost" href="fornecedor.php?id=<?= (int) $profile['id'] ?>" target="_blank" rel="noopener">Ver público</a><?php endif; ?></div></article>
-            <article class="dash-card"><span class="dash-icon">✅</span><h2>Verificação</h2><p>Envie documentos e aumente a confiança do seu perfil.</p><span class="status-tag <?= !empty($profile['verified_at']) ? 'status-ok' : 'status-pending' ?>"><?= !empty($profile['verified_at']) ? 'Verificado' : 'Não verificado' ?></span></article>
+            <article class="dash-card"><span class="dash-icon">✅</span><h2>Fornecedor Verificado</h2><p><?= $supplierStats['documents'] ?> documento(s) enviado(s)<?= $supplierStats['pending_documents'] ? ' · '.$supplierStats['pending_documents'].' pendente(s)' : '' ?>.</p><span class="status-tag <?= !empty($profile['verified_at']) ? 'status-ok' : 'status-pending' ?>"><?= !empty($profile['verified_at']) ? '✓ Verificado' : 'Não verificado' ?></span><div class="card-actions"><a class="button button-secondary" href="fornecedor-documentos.php">Gerenciar documentos</a></div></article>
             <article class="dash-card"><span class="dash-icon">🚨</span><h2>Preciso Agora</h2><p>Chamados emergenciais compatíveis aparecem em destaque nas oportunidades.</p><span class="status-tag <?= !empty($profile['emergency_service']) ? 'status-ok' : 'status-muted' ?>"><?= !empty($profile['emergency_service']) ? 'Ativado' : 'Desativado' ?></span><?php if ($profile): ?><div class="card-actions"><a class="button button-ghost" href="perfil-fornecedor.php">Alterar</a></div><?php endif; ?></article>
             <article class="dash-card"><span class="dash-icon">⭐</span><h2>Avaliações</h2><strong class="dash-number"><?= $supplierStats['rating'] !== null ? e(number_format((float) $supplierStats['rating'], 1, ',', '.')) : '—' ?></strong><p><?= $supplierStats['rating_count'] ?> avaliação(ões) de contratações concluídas.</p></article>
         </section>
@@ -116,5 +124,7 @@ $supplierProfileComplete = $isSupplier && $profile && $supplierStats['categories
             <article class="dash-card"><span class="dash-icon">🚨</span><h2>Preciso Agora</h2><p>Publique uma emergência para fornecedores que habilitaram atendimento imediato.</p><a class="button button-secondary" href="nova-solicitacao.php?urgencia=agora">Criar chamado urgente</a></article>
             <article class="dash-card"><span class="dash-icon">💳</span><h2>Plano</h2><p>A gestão dos planos pagos será conectada posteriormente.</p><span class="status-tag status-muted">Configuração pendente</span></article>
         </section>
-    <?php else: ?><section class="dashboard-grid"><article class="dash-card"><h2>Administração</h2><p>O painel administrativo será implementado em uma etapa específica.</p></article></section><?php endif; ?>
+    <?php else: ?>
+        <section class="dashboard-grid"><article class="dash-card dash-primary"><span class="dash-icon">✅</span><h2>Fornecedor Verificado</h2><p>Revise documentos, aprove ou rejeite arquivos e gerencie o selo público.</p><a class="button button-primary" href="admin-verificacao.php">Abrir fila de verificação</a></article><article class="dash-card"><span class="dash-icon">⚙️</span><h2>Administração</h2><p>Novos controles administrativos serão adicionados nas próximas fases.</p></article></section>
+    <?php endif; ?>
 </main></body></html>

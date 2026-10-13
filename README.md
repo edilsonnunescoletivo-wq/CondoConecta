@@ -15,7 +15,7 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 
 ## MVP
 
-1. Cadastro e autenticação
+1. Cadastro, autenticação e recuperação de senha
 2. Perfil do fornecedor, categorias e regiões atendidas
 3. Perfil público, portfólio e Fornecedor Verificado
 4. Solicitação de serviço com fotos protegidas
@@ -50,8 +50,24 @@ Migrações atuais:
 - `003_hiring_timeline.sql` — adiciona o marco de início da execução da contratação.
 - `004_geolocation_notifications.sql` — adiciona coordenadas do fornecedor e a central de notificações internas.
 - `005_supplier_verification.sql` — adiciona metadados de revisão, validade e gestão do selo de fornecedor verificado.
+- `006_password_reset_portfolio_upload.sql` — adiciona tokens de recuperação de senha e metadados das fotos enviadas ao portfólio.
 
-## Perfil e verificação do fornecedor
+## Recuperação de senha
+
+A tela de login possui o fluxo **Esqueci minha senha**. Quando existe uma conta ativa, o sistema cria um token aleatório, guarda apenas seu hash no banco e envia um link com validade de 30 minutos. O token é de uso único e uma nova solicitação invalida os links anteriores ainda não usados.
+
+Para reduzir enumeração de contas, a tela de solicitação retorna a mesma confirmação independentemente de o e-mail existir. Também há limitação básica de solicitações por conta dentro de uma hora.
+
+Configure no `.env`:
+
+- `APP_URL` com a URL pública do sistema;
+- `MAIL_DRIVER=mail` na hospedagem, ou `MAIL_DRIVER=log` em desenvolvimento;
+- `MAIL_FROM_ADDRESS` com um remetente válido do domínio;
+- `MAIL_FROM_NAME` com o nome exibido no e-mail.
+
+A primeira integração usa `mail()` do PHP para manter a implantação simples. SMTP dedicado pode ser adicionado posteriormente se a hospedagem exigir.
+
+## Perfil, portfólio e verificação do fornecedor
 
 O fornecedor pode configurar gratuitamente:
 
@@ -63,6 +79,8 @@ O fornecedor pode configurar gratuitamente:
 - portfólio de trabalhos realizados;
 - localização opcional para matching por distância real;
 - documentos para análise administrativa.
+
+O portfólio aceita upload direto de imagens JPG, PNG e WebP com até 5 MB. Os arquivos ficam em `storage/portfolio-images`, fora da pasta pública. O perfil público recebe a imagem através de `portfolio-imagem.php`, sem revelar o caminho físico armazenado. Registros antigos com `image_url` continuam compatíveis como fallback.
 
 Os documentos aceitos nesta fase são PDF, JPG e PNG, com limite de 10 MB por arquivo. Eles ficam em `storage/supplier-documents`, fora da pasta pública, e são servidos somente por rota autenticada ao próprio fornecedor ou a um administrador.
 
@@ -113,7 +131,7 @@ O fornecedor pode registrar o início do serviço. O contratante confirma a conc
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação, fotos e documentos usam armazenamento privado com rotas autenticadas e coordenadas são usadas somente para matching interno.
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, tokens de recuperação são armazenados somente em hash, dados pessoais de contato não ficam expostos antes da contratação, fotos/documentos ficam fora da pasta pública e coordenadas são usadas somente para matching interno.
 
 ## Status
 

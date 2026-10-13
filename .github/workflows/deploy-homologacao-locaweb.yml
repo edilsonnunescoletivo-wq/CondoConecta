@@ -1,0 +1,65 @@
+name: Deploy homologação Locaweb
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/develop/mvp-inicial'
+    runs-on: ubuntu-latest
+    environment: homologacao
+
+    steps:
+      - name: Checkout da branch de homologação
+        uses: actions/checkout@v4
+
+      - name: Validar configuração FTP
+        shell: bash
+        env:
+          FTP_URL: ${{ secrets.LOCAWEB_FTP_URL }}
+          FTP_USER: ${{ secrets.LOCAWEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.LOCAWEB_FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.LOCAWEB_FTP_DIR }}
+        run: |
+          set -euo pipefail
+          test -n "$FTP_URL"
+          test -n "$FTP_USER"
+          test -n "$FTP_PASSWORD"
+          test -n "$FTP_DIR"
+
+      - name: Instalar cliente FTP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Enviar CondoConecta para homologação
+        shell: bash
+        env:
+          FTP_URL: ${{ secrets.LOCAWEB_FTP_URL }}
+          FTP_USER: ${{ secrets.LOCAWEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.LOCAWEB_FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.LOCAWEB_FTP_DIR }}
+        run: |
+          set -euo pipefail
+          lftp -e "
+            set cmd:fail-exit yes;
+            set net:max-retries 2;
+            set net:timeout 20;
+            open -u \"$FTP_USER\",\"$FTP_PASSWORD\" \"$FTP_URL\";
+            mkdir -p \"$FTP_DIR\";
+            mirror -R --verbose \
+              --exclude-glob .git/ \
+              --exclude-glob .github/ \
+              --exclude-glob .env \
+              --exclude-glob vendor/ \
+              --exclude-glob storage/request-photos/* \
+              --exclude-glob storage/portfolio-images/* \
+              --exclude-glob storage/supplier-documents/* \
+              ./ \"$FTP_DIR\";
+            bye;
+          "
+
+      - name: Resumo
+        run: |
+          echo "Código enviado para a pasta de homologação configurada."
+          echo "O arquivo .env e arquivos enviados por usuários não são versionados nem enviados pelo workflow."

@@ -1,0 +1,37 @@
+name: PHP lint
+
+on:
+  push:
+    branches:
+      - develop/mvp-inicial
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.0', '8.3']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Validate Composer
+        run: composer validate --no-check-publish
+
+      - name: Lint PHP files
+        run: find app config public -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Smoke test money parser
+        run: |
+          php -r "require 'app/Core/Money.php'; use App\\Core\\Money; $cases=['1.234,56'=>1234.56,'1234,56'=>1234.56,'1234.56'=>1234.56,'1234'=>1234.00]; foreach($cases as $input=>$expected){$actual=Money::parse($input); if($actual===null || abs($actual-$expected)>0.0001){fwrite(STDERR, 'Falha em '.$input.PHP_EOL); exit(1);}}"

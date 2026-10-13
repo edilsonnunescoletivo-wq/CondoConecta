@@ -10,15 +10,19 @@
 - [x] Perfis iniciais separados por tipo de usuário.
 - [ ] Recuperação de senha por e-mail.
 
-## Fase 2 — Perfil do fornecedor
+## Fase 2 — Perfil e confiança do fornecedor
 - [x] Seleção de categorias de serviço.
 - [x] Regiões/cidades atendidas.
 - [x] Perfil público do fornecedor.
 - [x] Portfólio inicial de trabalhos.
 - [x] Configuração de atendimento emergencial.
+- [x] Upload privado de documentos PDF/JPG/PNG.
+- [x] Tipos de documento e controle de validade.
+- [x] Fila administrativa de revisão.
+- [x] Aprovação/rejeição com justificativa.
+- [x] Selo de Fornecedor Verificado concedido pela administração.
+- [x] Revogação automática do selo quando não houver documento-base aprovado e válido.
 - [ ] Upload direto de fotos do portfólio.
-- [ ] Upload de documentos.
-- [ ] Selo de fornecedor verificado.
 
 ## Fase 3 — Solicitações e marketplace
 - [x] Criação de solicitação de serviço.

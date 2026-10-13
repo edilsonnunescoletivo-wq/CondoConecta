@@ -4,31 +4,35 @@ Marketplace regional de fornecedores para condomínios, síndicos e administrado
 
 ## Proposta
 
-O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadastro e o envio de propostas são gratuitos para fornecedores; condomínios e administradoras contratam planos para acessar recursos de cotação, comparação, histórico, gestão e contratação.
+O CondoConecta conecta contratantes a fornecedores locais. O cadastro e o envio de propostas são gratuitos para fornecedores; condomínios, síndicos, empresas e administradoras utilizam período de teste e planos pagos para publicar solicitações e organizar cotações, contratações e histórico.
 
-## Perfis iniciais
+O CondoConecta atua como plataforma de intermediação tecnológica. O contrato de prestação de serviços é celebrado diretamente entre contratante e prestador.
+
+## Perfis
 
 - Fornecedor
-- Condomínio / Síndico
+- Condomínio / Síndico / Empresa
 - Administradora
 - Administrador da plataforma
 
-## MVP
+## MVP implementado
 
 1. Cadastro, autenticação e recuperação de senha
-2. Perfil do fornecedor, categorias e regiões atendidas
-3. Perfil público, portfólio e Fornecedor Verificado
-4. Solicitação de serviço com fotos protegidas
-5. Matching por categoria/região e distância
-6. Painel de oportunidades do fornecedor
-7. Envio e edição de propostas
-8. Comparação e contratação
-9. Acompanhamento da execução
-10. Avaliação pós-serviço
-11. Solicitações urgentes (“Preciso Agora”)
-12. Histórico de contratações
-13. Notificações internas de urgência
-14. Base para planos pagos do contratante
+2. Termos de Uso versionados e aceite obrigatório
+3. Perfil do fornecedor, categorias e regiões atendidas
+4. Perfil público, portfólio e Fornecedor Verificado
+5. Solicitação de serviço com fotos protegidas
+6. Matching por categoria/região e distância
+7. Painel de oportunidades do fornecedor
+8. Envio e edição de propostas
+9. Comparação e contratação
+10. Acompanhamento da execução
+11. Avaliação pós-serviço
+12. Solicitações urgentes (“Preciso Agora”)
+13. Histórico de contratações
+14. Notificações internas de urgência
+15. Planos, trial, limites de uso e assinatura recorrente
+16. Integração de assinatura com Mercado Pago e webhook autenticado
 
 ## Stack inicial
 
@@ -36,6 +40,7 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 - MySQL/MariaDB
 - HTML/CSS/JavaScript
 - Composer / PSR-4
+- Mercado Pago API de Assinaturas
 
 ## Instalação do banco
 
@@ -45,94 +50,95 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 
 Migrações atuais:
 
-- `001_supplier_portfolio.sql` — cria o portfólio público dos fornecedores.
-- `002_service_request_photos.sql` — adiciona fotos protegidas às solicitações de serviço.
-- `003_hiring_timeline.sql` — adiciona o marco de início da execução da contratação.
-- `004_geolocation_notifications.sql` — adiciona coordenadas do fornecedor e a central de notificações internas.
-- `005_supplier_verification.sql` — adiciona metadados de revisão, validade e gestão do selo de fornecedor verificado.
-- `006_password_reset_portfolio_upload.sql` — adiciona tokens de recuperação de senha e metadados das fotos enviadas ao portfólio.
+- `001_supplier_portfolio.sql` — portfólio público dos fornecedores.
+- `002_service_request_photos.sql` — fotos protegidas das solicitações.
+- `003_hiring_timeline.sql` — início da execução da contratação.
+- `004_geolocation_notifications.sql` — coordenadas e notificações internas.
+- `005_supplier_verification.sql` — revisão documental e selo de fornecedor verificado.
+- `006_password_reset_portfolio_upload.sql` — recuperação de senha e upload do portfólio.
+- `007_terms_monetization.sql` — aceite versionado dos termos, planos, assinatura e pagamentos.
 
-## Recuperação de senha
+## Termos de Uso e responsabilidades
 
-A tela de login possui o fluxo **Esqueci minha senha**. Quando existe uma conta ativa, o sistema cria um token aleatório, guarda apenas seu hash no banco e envia um link com validade de 30 minutos. O token é de uso único e uma nova solicitação invalida os links anteriores ainda não usados.
+A versão atual dos Termos está em `public/termos.php` e é controlada por `App\Core\Terms::VERSION`.
 
-Para reduzir enumeração de contas, a tela de solicitação retorna a mesma confirmação independentemente de o e-mail existir. Também há limitação básica de solicitações por conta dentro de uma hora.
+Contas que ainda não aceitaram a versão vigente são redirecionadas para `aceitar-termos.php`. O sistema grava usuário, versão, data, origem do aceite e hashes técnicos mínimos para auditoria. O endereço IP puro não é armazenado pela tabela de aceite.
+
+Os Termos deixam expresso que:
+
+- prestador e contratante celebram e executam a contratação diretamente;
+- as partes são responsáveis por conferir escopo, preço, prazo, garantia, documentos, capacidade técnica e dados fornecidos;
+- prestador e contratante são responsáveis pelas obrigações fiscais, previdenciárias, contábeis e acessórias relacionadas ao serviço;
+- as partes devem conferir emissão de nota fiscal, incidência, retenções, recolhimentos e repasses de ISS, INSS, IRRF, PIS, Cofins, CSLL e demais tributos quando aplicáveis;
+- o CondoConecta não presta consultoria tributária e não assume retenções/recolhimentos dos serviços contratados entre usuários;
+- o selo Fornecedor Verificado não equivale a garantia técnica ou comercial;
+- o CondoConecta mantém suas responsabilidades próprias como fornecedor da plataforma e agente de tratamento de dados, inclusive segurança, controle de acesso e proteção de dados conforme a legislação aplicável;
+- nenhuma cláusula pretende afastar obrigações legais indisponíveis da própria plataforma.
+
+Antes do lançamento comercial, os Termos devem passar por revisão jurídica e o modelo tributário da assinatura da plataforma deve passar por revisão contábil.
+
+## Monetização
+
+O fornecedor permanece gratuito para cadastro, documentos, perfil, portfólio, recebimento de oportunidades e envio de propostas.
+
+Planos atuais para contratantes:
+
+- Básico — R$ 39,90/mês — limite inicial de 5 novas solicitações/mês;
+- Profissional — R$ 79,90/mês — limite inicial de 30 novas solicitações/mês;
+- Premium — R$ 129,90/mês — solicitações sem limite mensal configurado;
+- Administradora — R$ 299,90/mês — plano específico para administradoras, sem limite mensal configurado nesta fase.
+
+Os valores e limites são dados de banco e podem ser alterados sem modificar a lógica da aplicação.
+
+Novas contas elegíveis recebem 14 dias de teste. O controle comercial reconhece os estados `trial`, `ativa`, `inadimplente` e `cancelada`. A criação de novas solicitações é bloqueada quando o teste termina ou a assinatura perde acesso, ou quando o limite mensal do plano é atingido.
+
+## Mercado Pago
+
+A integração usa a API de Assinaturas (`/preapproval`). O sistema cria uma assinatura pendente e redireciona o contratante ao `init_point` retornado pelo Mercado Pago.
+
+A ativação local não depende do retorno do navegador. O endpoint `mp-webhook.php` valida `x-signature` com HMAC-SHA256 usando `MP_WEBHOOK_SECRET`, consulta a assinatura novamente na API e só depois sincroniza o estado local.
 
 Configure no `.env`:
 
-- `APP_URL` com a URL pública do sistema;
-- `MAIL_DRIVER=mail` na hospedagem, ou `MAIL_DRIVER=log` em desenvolvimento;
-- `MAIL_FROM_ADDRESS` com um remetente válido do domínio;
-- `MAIL_FROM_NAME` com o nome exibido no e-mail.
+- `MP_ACCESS_TOKEN`
+- `MP_WEBHOOK_SECRET`
+- `APP_URL`
 
-A primeira integração usa `mail()` do PHP para manter a implantação simples. SMTP dedicado pode ser adicionado posteriormente se a hospedagem exigir.
+Nunca versione credenciais reais.
+
+## Recuperação de senha
+
+A tela de login possui o fluxo **Esqueci minha senha**. Quando existe uma conta ativa, o sistema cria um token aleatório, guarda apenas seu hash no banco e envia um link com validade de 30 minutos. O token é de uso único e uma nova solicitação invalida links anteriores ainda não usados.
+
+Para reduzir enumeração de contas, a tela retorna a mesma confirmação independentemente de o e-mail existir.
+
+Configure no `.env`:
+
+- `APP_URL`
+- `MAIL_DRIVER=mail` na hospedagem ou `MAIL_DRIVER=log` em desenvolvimento
+- `MAIL_FROM_ADDRESS`
+- `MAIL_FROM_NAME`
 
 ## Perfil, portfólio e verificação do fornecedor
 
-O fornecedor pode configurar gratuitamente:
+O fornecedor pode configurar gratuitamente categorias, regiões, raio de atendimento, atendimento emergencial, portfólio, localização opcional e documentos para análise.
 
-- nome público e apresentação;
-- categorias de serviço;
-- cidade base e raio de atendimento;
-- cidades/regiões atendidas;
-- participação em chamados emergenciais (“Preciso Agora”);
-- portfólio de trabalhos realizados;
-- localização opcional para matching por distância real;
-- documentos para análise administrativa.
+O portfólio aceita JPG, PNG e WebP com até 5 MB. Arquivos ficam em `storage/portfolio-images`, fora da pasta pública. Documentos de verificação ficam em `storage/supplier-documents` e só podem ser acessados pelo fornecedor proprietário ou por administrador autenticado.
 
-O portfólio aceita upload direto de imagens JPG, PNG e WebP com até 5 MB. Os arquivos ficam em `storage/portfolio-images`, fora da pasta pública. O perfil público recebe a imagem através de `portfolio-imagem.php`, sem revelar o caminho físico armazenado. Registros antigos com `image_url` continuam compatíveis como fallback.
+O selo **Fornecedor Verificado** depende de análise administrativa e de documento-base aprovado e válido. Ele não é garantia de qualidade, solvência ou execução técnica.
 
-Os documentos aceitos nesta fase são PDF, JPG e PNG, com limite de 10 MB por arquivo. Eles ficam em `storage/supplier-documents`, fora da pasta pública, e são servidos somente por rota autenticada ao próprio fornecedor ou a um administrador.
+## Marketplace, proximidade e contratação
 
-A administração pode aprovar ou rejeitar cada documento com observação. O selo **Fornecedor Verificado** não é concedido automaticamente por upload: ele depende de análise administrativa e exige pelo menos um documento-base de identificação aprovado e ainda válido. Se essa condição deixar de existir, o selo é revogado automaticamente quando o perfil é validado pelo sistema.
+Solicitações podem conter categoria, descrição, localidade, data desejada, urgência e até cinco fotos protegidas. O matching considera categoria, distância real dentro do raio quando houver coordenadas e cidade/região como fallback.
 
-O perfil público mostra apenas o selo e a informação de que a documentação-base foi revisada; os documentos brutos não são expostos aos contratantes.
-
-Telefone e e-mail também não são exibidos diretamente no perfil público. O contato é liberado entre fornecedor e contratante somente após o aceite de uma proposta e a criação da contratação.
-
-## Marketplace implementado
-
-O contratante pode publicar uma solicitação com categoria, descrição, localidade, data desejada, urgência e até cinco fotos. As fotos ficam em `storage/request-photos`, fora da pasta pública, e só são servidas por uma rota autenticada.
-
-A localização do chamado é opcional. Quando contratante e fornecedor permitem geolocalização, o CondoConecta calcula a distância entre os dois pontos e respeita o raio máximo configurado pelo fornecedor. Quando uma das coordenadas não existe, o sistema mantém o fallback por cidade/região cadastrada.
-
-O matching considera:
-
-- categoria selecionada pelo fornecedor;
-- distância real dentro do raio configurado, quando houver coordenadas nos dois lados;
-- cidade base ou cidade/região cadastrada como fallback;
-- atendimento emergencial habilitado quando a solicitação for “Preciso Agora”.
-
-O fornecedor compatível vê a oportunidade, acessa os detalhes e pode enviar ou editar gratuitamente uma proposta com valor, prazo, garantia e observações. As oportunidades são priorizadas por urgência e, dentro do mesmo nível, por proximidade quando a distância está disponível.
-
-## Preciso Agora e notificações
-
-Chamados `Urgente` e `Preciso Agora` geram notificações internas para fornecedores compatíveis. O fornecedor possui uma central de notificações com avisos não lidos e acesso direto à oportunidade.
-
-Nesta fase, a notificação é interna ao sistema. Push notification e e-mail instantâneo ficam planejados para a etapa de expansão/PWA.
-
-A coordenada do fornecedor não é exibida no perfil público e a coordenada do chamado não é mostrada diretamente aos fornecedores; ela é usada apenas para o cálculo de distância e elegibilidade.
-
-## Contratação e confiança
-
-O contratante recebe um comparador de propostas com valor, prazo, garantia, perfil do fornecedor e destaques de menor preço/menor prazo.
-
-Ao aceitar uma proposta:
-
-- a solicitação é encerrada para novas propostas;
-- a proposta escolhida passa para `aceita`;
-- as demais passam para `recusada`/não selecionada;
-- é criado um registro único em `hirings`;
-- os contatos das duas partes são liberados apenas dentro da contratação.
-
-O fornecedor pode registrar o início do serviço. O contratante confirma a conclusão e, após isso, pode avaliar qualidade, prazo, atendimento e custo-benefício. A média dessas avaliações passa a compor o histórico público do fornecedor.
+O contratante compara propostas, aceita uma delas e o sistema encerra as concorrentes. É criado um registro de contratação e somente então os contatos entre as partes são liberados. O fornecedor registra início do serviço; o contratante confirma conclusão e pode avaliar qualidade, prazo, atendimento e custo-benefício.
 
 ## Segurança
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, tokens de recuperação são armazenados somente em hash, dados pessoais de contato não ficam expostos antes da contratação, fotos/documentos ficam fora da pasta pública e coordenadas são usadas somente para matching interno.
+Senhas usam hash seguro, formulários sensíveis usam CSRF, tokens de recuperação são armazenados somente em hash, arquivos privados ficam fora da pasta pública, documentos têm autorização de acesso e coordenadas são usadas somente para matching interno.
 
 ## Status
 
-MVP em desenvolvimento na branch `develop/mvp-inicial` e revisado pelo PR #1.
+MVP em desenvolvimento na branch `develop/mvp-inicial` e revisado pelo PR #1. Nenhuma integração de pagamento deve ser considerada pronta para produção antes de testes em homologação com credenciais próprias do projeto.

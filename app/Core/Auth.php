@@ -21,10 +21,14 @@ final class Auth
 
         if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
             $rehash = $pdo->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
-            $rehash->execute([
-                'hash' => password_hash($password, PASSWORD_DEFAULT),
-                'id' => $user['id'],
-            ]);
+            $rehash->execute(['hash' => password_hash($password, PASSWORD_DEFAULT), 'id' => $user['id']]);
+        }
+
+        $accepted = false;
+        try {
+            $accepted = Terms::accepted($pdo, (int)$user['id']);
+        } catch (\Throwable $e) {
+            $accepted = false;
         }
 
         self::establish([
@@ -32,6 +36,7 @@ final class Auth
             'role' => (string) $user['role'],
             'name' => (string) $user['name'],
             'email' => (string) $user['email'],
+            'terms_version' => $accepted ? Terms::VERSION : null,
         ]);
 
         return true;
@@ -45,6 +50,7 @@ final class Auth
             'role' => (string) $user['role'],
             'name' => (string) $user['name'],
             'email' => (string) $user['email'],
+            'terms_version' => $user['terms_version'] ?? null,
         ];
     }
 
@@ -59,26 +65,34 @@ final class Auth
         return self::user() !== null;
     }
 
-    public static function requireAuth(): array
+    public static function requireAuth(bool $requireTerms = true): array
     {
         $user = self::user();
         if ($user === null) {
             header('Location: login.php');
             exit;
         }
-
+        if ($requireTerms && ($user['terms_version'] ?? null) !== Terms::VERSION) {
+            header('Location: aceitar-termos.php');
+            exit;
+        }
         return $user;
+    }
+
+    public static function markTermsAccepted(): void
+    {
+        if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
+            $_SESSION['user']['terms_version'] = Terms::VERSION;
+        }
     }
 
     public static function logout(): void
     {
         $_SESSION = [];
-
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool) $params['secure'], (bool) $params['httponly']);
         }
-
         session_destroy();
     }
 }

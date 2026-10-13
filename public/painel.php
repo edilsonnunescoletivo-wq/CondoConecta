@@ -13,7 +13,7 @@ use Throwable;
 $user = Auth::requireAuth();
 $profile = null;
 $dbWarning = null;
-$supplierStats = ['categories' => 0, 'regions' => 0, 'portfolio' => 0, 'opportunities' => 0, 'proposals' => 0];
+$supplierStats = ['categories' => 0, 'regions' => 0, 'portfolio' => 0, 'opportunities' => 0, 'proposals' => 0, 'hirings' => 0, 'rating_count' => 0, 'rating' => null];
 $contractorStats = ['open_requests' => 0, 'proposals' => 0, 'hirings' => 0];
 
 try {
@@ -53,6 +53,16 @@ try {
         $proposalCount = $pdo->prepare("SELECT COUNT(*) FROM proposals WHERE supplier_user_id = :user_id AND status <> 'retirada'");
         $proposalCount->execute(['user_id' => $user['id']]);
         $supplierStats['proposals'] = (int) $proposalCount->fetchColumn();
+
+        $hiringCount = $pdo->prepare('SELECT COUNT(*) FROM hirings WHERE supplier_user_id = :user_id');
+        $hiringCount->execute(['user_id' => $user['id']]);
+        $supplierStats['hirings'] = (int) $hiringCount->fetchColumn();
+
+        $ratingStmt = $pdo->prepare('SELECT COUNT(*) AS total, AVG((quality_rating + deadline_rating + service_rating + value_rating) / 4) AS average_rating FROM reviews WHERE supplier_user_id = :user_id');
+        $ratingStmt->execute(['user_id' => $user['id']]);
+        $ratingData = $ratingStmt->fetch();
+        $supplierStats['rating_count'] = (int) ($ratingData['total'] ?? 0);
+        $supplierStats['rating'] = $ratingData && $ratingData['average_rating'] !== null ? (float) $ratingData['average_rating'] : null;
     }
 
     if ($user['role'] === 'contratante') {
@@ -79,60 +89,32 @@ $supplierProfileComplete = $isSupplier && $profile && $supplierStats['categories
 ?>
 <!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Painel — <?= e((string) ($config['name'] ?? 'CondoConecta')) ?></title>
-    <link rel="stylesheet" href="assets/css/app.css">
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Painel — <?= e((string) ($config['name'] ?? 'CondoConecta')) ?></title><link rel="stylesheet" href="assets/css/app.css"></head>
 <body class="dashboard-page">
-<header class="topbar">
-    <div class="container nav">
-        <a class="brand" href="index.php">Condo<span>Conecta</span></a>
-        <nav class="dashboard-nav">
-            <span class="nav-user"><?= e($user['name']) ?></span>
-            <form method="post" action="logout.php"><input type="hidden" name="_csrf" value="<?= e(Csrf::token()) ?>"><button class="button button-ghost" type="submit">Sair</button></form>
-        </nav>
-    </div>
-</header>
-
+<header class="topbar"><div class="container nav"><a class="brand" href="index.php">Condo<span>Conecta</span></a><nav class="dashboard-nav"><span class="nav-user"><?= e($user['name']) ?></span><form method="post" action="logout.php"><input type="hidden" name="_csrf" value="<?= e(Csrf::token()) ?>"><button class="button button-ghost" type="submit">Sair</button></form></nav></div></header>
 <main class="container dashboard-shell">
     <?php if (isset($_GET['novo'])): ?><div class="alert alert-success">Conta criada com sucesso. Bem-vindo ao CondoConecta!</div><?php endif; ?>
     <?php if ($dbWarning): ?><div class="alert alert-error"><?= e($dbWarning) ?></div><?php endif; ?>
-
-    <section class="dashboard-hero">
-        <div>
-            <span class="badge"><?= $isSupplier ? 'FORNECEDOR' : ($user['role'] === 'contratante' ? 'CONTRATANTE' : 'ADMINISTRADOR') ?></span>
-            <h1>Olá, <?= e($displayName) ?>.</h1>
-            <p><?= $isSupplier ? 'Seu espaço para receber oportunidades e enviar propostas.' : 'Seu espaço para solicitar serviços, comparar propostas e acompanhar contratações.' ?></p>
-            <?php if ($location): ?><span class="location-pill">📍 <?= e($location) ?></span><?php endif; ?>
-        </div>
-        <?php if ($isSupplier): ?>
-            <div class="account-status"><strong>Cadastro gratuito</strong><span>Sem cobrança por lead ou proposta no MVP</span><?php if ($supplierProfileComplete): ?><span class="status-tag status-ok">Perfil de serviços configurado</span><?php else: ?><span class="status-tag status-pending">Complete seu perfil para receber oportunidades</span><?php endif; ?></div>
-        <?php endif; ?>
-    </section>
+    <section class="dashboard-hero"><div><span class="badge"><?= $isSupplier ? 'FORNECEDOR' : ($user['role'] === 'contratante' ? 'CONTRATANTE' : 'ADMINISTRADOR') ?></span><h1>Olá, <?= e($displayName) ?>.</h1><p><?= $isSupplier ? 'Seu espaço para receber oportunidades e enviar propostas.' : 'Seu espaço para solicitar serviços, comparar propostas e acompanhar contratações.' ?></p><?php if ($location): ?><span class="location-pill">📍 <?= e($location) ?></span><?php endif; ?></div><?php if ($isSupplier): ?><div class="account-status"><strong>Cadastro gratuito</strong><span>Sem cobrança por lead ou proposta no MVP</span><?php if ($supplierProfileComplete): ?><span class="status-tag status-ok">Perfil de serviços configurado</span><?php else: ?><span class="status-tag status-pending">Complete seu perfil para receber oportunidades</span><?php endif; ?></div><?php endif; ?></section>
 
     <?php if ($isSupplier): ?>
         <section class="dashboard-grid">
             <article class="dash-card dash-primary"><span class="dash-icon">⚡</span><h2>Oportunidades</h2><strong class="dash-number"><?= $supplierStats['opportunities'] ?></strong><p>Solicitações compatíveis com suas categorias e regiões.</p><a class="button button-primary" href="oportunidades.php">Ver oportunidades</a></article>
-            <article class="dash-card"><span class="dash-icon">📄</span><h2>Minhas propostas</h2><strong class="dash-number"><?= $supplierStats['proposals'] ?></strong><p>Acompanhe e edite propostas enviadas.</p><a class="button button-secondary" href="minhas-propostas.php">Abrir propostas</a></article>
+            <article class="dash-card"><span class="dash-icon">📄</span><h2>Minhas propostas</h2><strong class="dash-number"><?= $supplierStats['proposals'] ?></strong><p>Acompanhe propostas em análise e resultados.</p><a class="button button-secondary" href="minhas-propostas.php">Abrir propostas</a></article>
+            <article class="dash-card"><span class="dash-icon">🤝</span><h2>Contratações</h2><strong class="dash-number"><?= $supplierStats['hirings'] ?></strong><p>Acompanhe os serviços em que sua proposta foi escolhida.</p><a class="button button-secondary" href="minhas-contratacoes.php">Abrir contratações</a></article>
             <article class="dash-card"><span class="dash-icon">🧰</span><h2>Perfil de serviços</h2><p>Defina categorias, regiões atendidas, apresentação e portfólio.</p><div class="profile-progress"><span><?= $supplierStats['categories'] ?> categoria(s)</span><span>•</span><span><?= $supplierStats['regions'] ?> região(ões)</span><span>•</span><span><?= $supplierStats['portfolio'] ?> trabalho(s)</span></div><div class="card-actions"><a class="button button-secondary" href="perfil-fornecedor.php">Configurar perfil</a><?php if ($profile): ?><a class="button button-ghost" href="fornecedor.php?id=<?= (int) $profile['id'] ?>" target="_blank" rel="noopener">Ver público</a><?php endif; ?></div></article>
             <article class="dash-card"><span class="dash-icon">✅</span><h2>Verificação</h2><p>Envie documentos e aumente a confiança do seu perfil.</p><span class="status-tag <?= !empty($profile['verified_at']) ? 'status-ok' : 'status-pending' ?>"><?= !empty($profile['verified_at']) ? 'Verificado' : 'Não verificado' ?></span></article>
             <article class="dash-card"><span class="dash-icon">🚨</span><h2>Preciso Agora</h2><p>Chamados emergenciais compatíveis aparecem em destaque nas oportunidades.</p><span class="status-tag <?= !empty($profile['emergency_service']) ? 'status-ok' : 'status-muted' ?>"><?= !empty($profile['emergency_service']) ? 'Ativado' : 'Desativado' ?></span><?php if ($profile): ?><div class="card-actions"><a class="button button-ghost" href="perfil-fornecedor.php">Alterar</a></div><?php endif; ?></article>
-            <article class="dash-card"><span class="dash-icon">⭐</span><h2>Avaliações</h2><strong class="dash-number">—</strong><p>Somente contratações concluídas pela plataforma poderão gerar avaliação.</p></article>
+            <article class="dash-card"><span class="dash-icon">⭐</span><h2>Avaliações</h2><strong class="dash-number"><?= $supplierStats['rating'] !== null ? e(number_format((float) $supplierStats['rating'], 1, ',', '.')) : '—' ?></strong><p><?= $supplierStats['rating_count'] ?> avaliação(ões) de contratações concluídas.</p></article>
         </section>
     <?php elseif ($user['role'] === 'contratante'): ?>
         <section class="dashboard-grid">
             <article class="dash-card dash-primary"><span class="dash-icon">＋</span><h2>Nova solicitação</h2><p>Descreva o que precisa e receba propostas de fornecedores da região.</p><a class="button button-primary" href="nova-solicitacao.php">Criar solicitação</a></article>
             <article class="dash-card"><span class="dash-icon">📊</span><h2>Cotações abertas</h2><strong class="dash-number"><?= $contractorStats['open_requests'] ?></strong><p>Você recebeu <?= $contractorStats['proposals'] ?> proposta(s) no total.</p><a class="button button-secondary" href="minhas-solicitacoes.php">Acompanhar cotações</a></article>
-            <article class="dash-card"><span class="dash-icon">🤝</span><h2>Contratações</h2><strong class="dash-number"><?= $contractorStats['hirings'] ?></strong><p>Serviços contratados e histórico ficarão organizados aqui.</p><span class="status-tag status-muted">Próxima etapa</span></article>
+            <article class="dash-card"><span class="dash-icon">🤝</span><h2>Contratações</h2><strong class="dash-number"><?= $contractorStats['hirings'] ?></strong><p>Acompanhe serviços contratados, execução e avaliações.</p><a class="button button-secondary" href="minhas-contratacoes.php">Abrir contratações</a></article>
             <article class="dash-card"><span class="dash-icon">🔎</span><h2>Fornecedores</h2><p>Os perfis dos fornecedores ficam acessíveis a partir das propostas recebidas.</p></article>
             <article class="dash-card"><span class="dash-icon">🚨</span><h2>Preciso Agora</h2><p>Publique uma emergência para fornecedores que habilitaram atendimento imediato.</p><a class="button button-secondary" href="nova-solicitacao.php?urgencia=agora">Criar chamado urgente</a></article>
             <article class="dash-card"><span class="dash-icon">💳</span><h2>Plano</h2><p>A gestão dos planos pagos será conectada posteriormente.</p><span class="status-tag status-muted">Configuração pendente</span></article>
         </section>
-    <?php else: ?>
-        <section class="dashboard-grid"><article class="dash-card"><h2>Administração</h2><p>O painel administrativo será implementado em uma etapa específica.</p></article></section>
-    <?php endif; ?>
-</main>
-</body>
-</html>
+    <?php else: ?><section class="dashboard-grid"><article class="dash-card"><h2>Administração</h2><p>O painel administrativo será implementado em uma etapa específica.</p></article></section><?php endif; ?>
+</main></body></html>

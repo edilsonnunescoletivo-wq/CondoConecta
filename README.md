@@ -36,7 +36,7 @@ O CondoConecta atua como plataforma de intermediação tecnológica. O contrato 
 
 ## Stack inicial
 
-- PHP 8.1+
+- PHP 8.0+
 - MySQL/MariaDB
 - HTML/CSS/JavaScript
 - Composer / PSR-4
@@ -57,6 +57,8 @@ Migrações atuais:
 - `005_supplier_verification.sql` — revisão documental e selo de fornecedor verificado.
 - `006_password_reset_portfolio_upload.sql` — recuperação de senha e upload do portfólio.
 - `007_terms_monetization.sql` — aceite versionado dos termos, planos, assinatura e pagamentos.
+
+Para implantação de homologação na Locaweb, siga `docs/deploy-locaweb-homologacao.md`.
 
 ## Termos de Uso e responsabilidades
 

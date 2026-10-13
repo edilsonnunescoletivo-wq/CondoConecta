@@ -47,11 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="auth-shell container">
     <section class="auth-card">
         <div class="auth-heading"><p class="eyebrow">Acesso</p><h1>Entre na sua conta</h1><p>Acesse oportunidades, cotações e contratações do seu perfil.</p></div>
+        <?php if (isset($_GET['senha']) && $_GET['senha'] === 'alterada'): ?><div class="alert alert-success">Senha alterada com sucesso. Entre usando sua nova senha.</div><?php endif; ?>
         <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
         <form method="post" class="stack-form">
             <input type="hidden" name="_csrf" value="<?= e(Csrf::token()) ?>">
             <label>E-mail<input type="email" name="email" value="<?= e($email) ?>" autocomplete="email" required autofocus></label>
             <label>Senha<input type="password" name="password" autocomplete="current-password" required></label>
+            <div class="form-actions"><a href="esqueci-senha.php">Esqueci minha senha</a></div>
             <button class="button button-primary button-full" type="submit">Entrar</button>
         </form>
         <p class="auth-foot">Ainda não tem conta? <a href="cadastro.php">Cadastre-se aqui.</a></p>

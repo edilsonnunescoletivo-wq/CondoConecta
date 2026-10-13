@@ -23,10 +23,11 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 6. Painel de oportunidades do fornecedor
 7. Envio e edição de propostas
 8. Comparação e contratação
-9. Avaliação pós-serviço
-10. Solicitações urgentes (“Preciso Agora”)
-11. Histórico de contratações
-12. Base para planos pagos do contratante
+9. Acompanhamento da execução
+10. Avaliação pós-serviço
+11. Solicitações urgentes (“Preciso Agora”)
+12. Histórico de contratações
+13. Base para planos pagos do contratante
 
 ## Stack inicial
 
@@ -45,6 +46,7 @@ Migrações atuais:
 
 - `001_supplier_portfolio.sql` — cria o portfólio público dos fornecedores.
 - `002_service_request_photos.sql` — adiciona fotos protegidas às solicitações de serviço.
+- `003_hiring_timeline.sql` — adiciona o marco de início da execução da contratação.
 
 ## Perfil do fornecedor
 
@@ -57,9 +59,9 @@ O fornecedor pode configurar gratuitamente:
 - participação em chamados emergenciais (“Preciso Agora”);
 - portfólio de trabalhos realizados.
 
-Telefone e e-mail não são exibidos diretamente no perfil público. O contato é tratado dentro do fluxo de solicitação/proposta.
+Telefone e e-mail não são exibidos diretamente no perfil público. O contato é liberado entre fornecedor e contratante somente após o aceite de uma proposta e a criação da contratação.
 
-## Marketplace já implementado
+## Marketplace implementado
 
 O contratante pode publicar uma solicitação com categoria, descrição, localidade, data desejada, urgência e até cinco fotos. As fotos ficam em `storage/request-photos`, fora da pasta pública, e só são servidas por uma rota autenticada.
 
@@ -71,13 +73,27 @@ O matching inicial usa:
 
 O fornecedor compatível vê a oportunidade, acessa os detalhes e pode enviar ou editar gratuitamente uma proposta com valor, prazo, garantia e observações.
 
+## Contratação e confiança
+
+O contratante recebe um comparador de propostas com valor, prazo, garantia, perfil do fornecedor e destaques de menor preço/menor prazo.
+
+Ao aceitar uma proposta:
+
+- a solicitação é encerrada para novas propostas;
+- a proposta escolhida passa para `aceita`;
+- as demais passam para `recusada`/não selecionada;
+- é criado um registro único em `hirings`;
+- os contatos das duas partes são liberados apenas dentro da contratação.
+
+O fornecedor pode registrar o início do serviço. O contratante confirma a conclusão e, após isso, pode avaliar qualidade, prazo, atendimento e custo-benefício. A média dessas avaliações passa a compor o histórico público do fornecedor.
+
 A geolocalização por distância real e o uso efetivo do raio em quilômetros serão implementados na fase específica de geolocalização.
 
 ## Segurança
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos no perfil público e fotos de solicitações exigem autorização para visualização.
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação e fotos de solicitações exigem autorização para visualização.
 
 ## Status
 

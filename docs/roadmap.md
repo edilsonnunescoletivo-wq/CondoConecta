@@ -31,14 +31,17 @@
 - [x] Listagem de propostas do fornecedor.
 
 ## Fase 4 — Contratação e confiança
-- [ ] Comparador estruturado de propostas.
-- [ ] Aceite de proposta pelo contratante.
-- [ ] Alteração automática das demais propostas para recusadas.
-- [ ] Criação do registro de contratação (`hirings`).
-- [ ] Histórico de contratação para as duas partes.
-- [ ] Início e conclusão do serviço.
-- [ ] Avaliações vinculadas a serviço concluído.
-- [ ] Indicadores de prazo, garantia e valor.
+- [x] Comparador estruturado de propostas.
+- [x] Destaques de menor preço e menor prazo.
+- [x] Aceite de proposta pelo contratante.
+- [x] Alteração automática das demais propostas para não selecionadas.
+- [x] Criação do registro de contratação (`hirings`).
+- [x] Histórico de contratação para as duas partes.
+- [x] Liberação de contato somente após contratação.
+- [x] Registro de início e conclusão do serviço.
+- [x] Avaliações vinculadas a serviço concluído.
+- [x] Indicadores de qualidade, prazo, atendimento e custo-benefício.
+- [x] Média de avaliações exibida no painel do fornecedor.
 
 ## Fase 5 — Preciso Agora
 - [x] Disponibilidade emergencial básica por região.

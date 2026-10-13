@@ -8,7 +8,7 @@
 - [x] Login, sessão e logout.
 - [x] Proteção CSRF e senha com hash seguro.
 - [x] Perfis iniciais separados por tipo de usuário.
-- [ ] Recuperação de senha por e-mail.
+- [x] Recuperação de senha por e-mail com token de uso único.
 
 ## Fase 2 — Perfil e confiança do fornecedor
 - [x] Seleção de categorias de serviço.
@@ -22,7 +22,8 @@
 - [x] Aprovação/rejeição com justificativa.
 - [x] Selo de Fornecedor Verificado concedido pela administração.
 - [x] Revogação automática do selo quando não houver documento-base aprovado e válido.
-- [ ] Upload direto de fotos do portfólio.
+- [x] Upload direto de fotos JPG/PNG/WebP do portfólio.
+- [x] Armazenamento das fotos do portfólio fora da pasta pública.
 
 ## Fase 3 — Solicitações e marketplace
 - [x] Criação de solicitação de serviço.

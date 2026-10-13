@@ -6,6 +6,10 @@
 /storage/cache/*
 /storage/request-photos/*
 !/storage/request-photos/.gitkeep
+/storage/supplier-documents/*
+!/storage/supplier-documents/.gitkeep
+/storage/portfolio-images/*
+!/storage/portfolio-images/.gitkeep
 .DS_Store
 Thumbs.db
 .idea/

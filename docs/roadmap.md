@@ -59,11 +59,20 @@
 - [x] Notificações internas para chamados urgentes e Preciso Agora.
 - [ ] Push notification/e-mail instantâneo fora do sistema.
 
-## Fase 6 — Monetização
-- [ ] Planos para condomínio e administradora.
-- [ ] Período de teste.
-- [ ] Integração de pagamento.
-- [ ] Controle automático de assinatura e inadimplência.
+## Fase 6 — Monetização, termos e acesso comercial
+- [x] Planos para condomínio/empresa/síndico e administradora.
+- [x] Período de teste de 14 dias.
+- [x] Limite mensal configurável por plano.
+- [x] Página de planos e status atual da assinatura.
+- [x] Integração de assinatura recorrente com Mercado Pago.
+- [x] Webhook com validação HMAC antes de alterar status local.
+- [x] Controle de acesso para criação de novas solicitações conforme teste/assinatura.
+- [x] Status de assinatura: teste, ativa, inadimplente e cancelada.
+- [x] Termo de Uso público e versionado.
+- [x] Aceite obrigatório para contas novas e existentes.
+- [x] Evidência mínima de aceite sem armazenar IP puro.
+- [x] Responsabilidades contratuais, fiscais, tributárias e de conferência atribuídas às partes.
+- [x] Limitação da intermediação sem afastar obrigações legais próprias da plataforma.
 
 ## Fase 7 — Inteligência e integração
 - [ ] Comparação assistida de propostas.
@@ -77,3 +86,10 @@
 - [ ] Novas regiões.
 - [ ] Painel comercial e métricas de marketplace.
 - [ ] Programa de indicação.
+
+## Antes do lançamento comercial
+- [ ] Revisão jurídica final dos Termos de Uso e do Aviso de Privacidade.
+- [ ] Revisão contábil/tributária do modelo de cobrança da plataforma.
+- [ ] Configuração das credenciais reais do Mercado Pago apenas no ambiente de hospedagem.
+- [ ] Aplicação e teste das migrações em ambiente de homologação.
+- [ ] Teste integral: cadastro → aceite → trial → cotação → contratação → assinatura → webhook → bloqueio/liberação.

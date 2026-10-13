@@ -8,7 +8,6 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Marketplace;
-use App\Core\Money;
 use Throwable;
 
 $user = Auth::requireAuth();
@@ -117,12 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isSupplier && $supplierAllowed && 
         $errors[] = 'Esta solicitação não está mais recebendo propostas.';
     }
 
-    $amount = Money::parse((string) ($_POST['amount'] ?? ''));
+    $amountRaw = str_replace(['.', ','], ['', '.'], trim((string) ($_POST['amount'] ?? '')));
+    $amount = (float) $amountRaw;
     $estimatedDays = trim((string) ($_POST['estimated_days'] ?? ''));
     $warrantyDays = trim((string) ($_POST['warranty_days'] ?? ''));
     $details = trim((string) ($_POST['details'] ?? ''));
 
-    if ($amount === null || $amount <= 0 || $amount > 9999999999) {
+    if ($amount <= 0 || $amount > 9999999999) {
         $errors[] = 'Informe um valor válido para a proposta.';
     }
     if ($estimatedDays !== '' && ((int) $estimatedDays < 1 || (int) $estimatedDays > 3650)) {
@@ -218,3 +218,37 @@ $proposalStatusLabels = ['enviada' => 'Em análise', 'aceita' => 'Aceita', 'recu
         <div>
             <div class="request-meta"><span class="status-tag <?= $request['urgency'] === 'agora' ? 'status-danger' : ($request['urgency'] === 'urgente' ? 'status-pending' : 'status-muted') ?>"><?= e($urgencyLabels[$request['urgency']] ?? $request['urgency']) ?></span><span><?= e((string) $request['category_name']) ?></span><span><?= e($statusLabels[$request['status']] ?? $request['status']) ?></span></div>
             <h1><?= e((string) $request['title']) ?></h1>
+            <p><?= nl2br(e((string) $request['description'])) ?></p>
+        </div>
+        <?php if ($isOwner && $matchCount !== null): ?><div class="match-summary"><strong><?= (int) $matchCount ?></strong><span>fornecedor(es) compatível(is)</span></div><?php endif; ?>
+    </section>
+
+    <?php if ($hiring): ?><div class="alert alert-success"><strong>Fornecedor contratado.</strong> A cotação foi encerrada e a contratação já pode ser acompanhada. <a href="contratacao.php?id=<?= (int) $hiring['id'] ?>">Abrir contratação</a></div><?php endif; ?>
+
+    <div class="request-detail-grid">
+        <section class="card-panel">
+            <h2>Dados do atendimento</h2>
+            <div class="detail-list"><div><span>Contratante</span><strong><?= e((string) $request['contractor_name']) ?></strong></div><div><span>Localidade</span><strong><?= e((string) $request['city']) ?> • <?= e((string) $request['state']) ?></strong></div><?php if ($request['address_reference']): ?><div><span>Referência</span><strong><?= e((string) $request['address_reference']) ?></strong></div><?php endif; ?><?php if ($request['desired_date']): ?><div><span>Data desejada</span><strong><?= e(date('d/m/Y', strtotime((string) $request['desired_date']))) ?></strong></div><?php endif; ?></div>
+            <?php if ($photos): ?><h3>Fotos da necessidade</h3><div class="request-photo-grid"><?php foreach ($photos as $photo): ?><a href="solicitacao-imagem.php?id=<?= (int) $photo['id'] ?>" target="_blank" rel="noopener"><img src="solicitacao-imagem.php?id=<?= (int) $photo['id'] ?>" alt="<?= e((string) $photo['original_name']) ?>"></a><?php endforeach; ?></div><?php endif; ?>
+        </section>
+
+        <?php if ($isSupplier): ?>
+            <section class="card-panel proposal-panel">
+                <span class="badge">SUA PROPOSTA</span><h2><?= $myProposal ? 'Sua proposta' : 'Enviar proposta' ?></h2>
+                <?php if ($myProposal): ?><span class="status-tag <?= $myProposal['status'] === 'aceita' ? 'status-ok' : ($myProposal['status'] === 'recusada' ? 'status-danger' : 'status-muted') ?>"><?= e($proposalStatusLabels[$myProposal['status']] ?? $myProposal['status']) ?></span><?php endif; ?>
+                <?php if (in_array($request['status'], ['aberta', 'em_cotacao'], true)): ?>
+                <form method="post" class="stack-form">
+                    <input type="hidden" name="_csrf" value="<?= e(Csrf::token()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="action" value="save_proposal">
+                    <label>Valor total (R$)<input type="text" name="amount" inputmode="decimal" required placeholder="0,00" value="<?= $myProposal ? e(number_format((float) $myProposal['amount'], 2, ',', '.')) : '' ?>"></label>
+                    <div class="mini-grid"><label>Prazo estimado (dias)<input type="number" name="estimated_days" min="1" max="3650" value="<?= $myProposal ? e((string) ($myProposal['estimated_days'] ?? '')) : '' ?>"></label><label>Garantia (dias)<input type="number" name="warranty_days" min="0" max="3650" value="<?= $myProposal ? e((string) ($myProposal['warranty_days'] ?? '')) : '' ?>"></label></div>
+                    <label>Detalhes<textarea name="details" rows="5" maxlength="3000" placeholder="Descreva escopo, materiais inclusos, condições e observações."><?= $myProposal ? e((string) ($myProposal['details'] ?? '')) : '' ?></textarea></label>
+                    <button class="button button-primary" type="submit"><?= $myProposal ? 'Atualizar proposta' : 'Enviar proposta gratuitamente' ?></button>
+                </form>
+                <?php elseif ($hiring && $myProposal && $myProposal['status'] === 'aceita'): ?><p>Sua proposta foi escolhida.</p><a class="button button-primary button-full" href="contratacao.php?id=<?= (int) $hiring['id'] ?>">Acompanhar contratação</a><?php else: ?><p>Esta solicitação não está mais recebendo propostas.</p><?php endif; ?>
+            </section>
+        <?php else: ?>
+            <section class="card-panel proposal-panel"><span class="badge">COMPARADOR</span><h2><?= count($proposals) ?> proposta(s)</h2><?php if (!$proposals): ?><p class="muted">Aguardando fornecedores enviarem propostas.</p><?php else: ?><div class="proposal-list"><?php foreach ($proposals as $proposal): ?><?php $isCheapest = $minPrice !== null && abs((float) $proposal['amount'] - $minPrice) < 0.001 && in_array($proposal['status'], ['enviada', 'aceita'], true); $isFastest = $minDays !== null && (int) ($proposal['estimated_days'] ?? 0) === $minDays && in_array($proposal['status'], ['enviada', 'aceita'], true); ?><article class="proposal-card <?= $proposal['status'] === 'aceita' ? 'proposal-selected' : '' ?>"><div><strong><?= e((string) $proposal['trade_name']) ?> <?= $proposal['verified_at'] ? '✓' : '' ?></strong><a href="fornecedor.php?id=<?= (int) $proposal['supplier_id'] ?>" target="_blank" rel="noopener">Ver perfil</a></div><div class="comparison-tags"><?php if ($isCheapest): ?><span class="status-tag status-ok">Menor preço</span><?php endif; ?><?php if ($isFastest): ?><span class="status-tag status-info">Menor prazo</span><?php endif; ?><span class="status-tag <?= $proposal['status'] === 'aceita' ? 'status-ok' : ($proposal['status'] === 'recusada' ? 'status-muted' : 'status-pending') ?>"><?= e($proposalStatusLabels[$proposal['status']] ?? $proposal['status']) ?></span></div><strong class="proposal-price">R$ <?= e(number_format((float) $proposal['amount'], 2, ',', '.')) ?></strong><div class="request-meta"><?php if ($proposal['estimated_days']): ?><span>Prazo: <?= (int) $proposal['estimated_days'] ?> dia(s)</span><?php else: ?><span>Prazo não informado</span><?php endif; ?><?php if ($proposal['warranty_days'] !== null): ?><span>Garantia: <?= (int) $proposal['warranty_days'] ?> dia(s)</span><?php else: ?><span>Garantia não informada</span><?php endif; ?></div><?php if ($proposal['details']): ?><p><?= nl2br(e((string) $proposal['details'])) ?></p><?php endif; ?><?php if ($isOwner && in_array($request['status'], ['aberta', 'em_cotacao'], true) && $proposal['status'] === 'enviada'): ?><form method="post" onsubmit="return confirm('Aceitar esta proposta e encerrar a cotação? As demais propostas serão marcadas como não selecionadas.');"><input type="hidden" name="_csrf" value="<?= e(Csrf::token()) ?>"><input type="hidden" name="id" value="<?= $requestId ?>"><input type="hidden" name="action" value="accept_proposal"><input type="hidden" name="proposal_id" value="<?= (int) $proposal['id'] ?>"><button class="button button-primary button-full" type="submit">Aceitar e contratar</button></form><?php endif; ?></article><?php endforeach; ?></div><?php endif; ?></section>
+        <?php endif; ?>
+    </div>
+</main>
+</body></html>

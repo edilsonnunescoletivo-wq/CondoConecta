@@ -72,3 +72,20 @@ function redirect(string $url): never
     header('Location: ' . $url);
     exit;
 }
+
+// Rotas comerciais que exigem teste ou assinatura válida do contratante.
+$currentScript = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+if ($currentScript === 'nova-solicitacao.php' && \App\Core\Auth::check()) {
+    $sessionUser = \App\Core\Auth::user();
+    if (($sessionUser['role'] ?? '') === 'contratante' && ($sessionUser['terms_version'] ?? null) === \App\Core\Terms::VERSION) {
+        try {
+            $subscriptionPdo = \App\Core\Database::connection($config);
+            [$subscriptionAllowed] = \App\Core\Subscription::canCreateRequest($subscriptionPdo, (int) $sessionUser['id']);
+            if (!$subscriptionAllowed) {
+                redirect('planos.php?bloqueio=1');
+            }
+        } catch (\Throwable $exception) {
+            // Antes da migração comercial, não derruba a aplicação.
+        }
+    }
+}

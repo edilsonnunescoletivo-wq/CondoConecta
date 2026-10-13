@@ -6,6 +6,9 @@ require __DIR__ . '/bootstrap.php';
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\Marketplace;
+use App\Core\Notifications;
+use Throwable;
 
 $user = Auth::requireAuth();
 if (($user['role'] ?? '') !== 'fornecedor') {
@@ -13,44 +16,73 @@ if (($user['role'] ?? '') !== 'fornecedor') {
 }
 
 $pdo = Database::connection($config);
-$sql = "SELECT DISTINCT sr.id, sr.title, sr.description, sr.urgency, sr.city, sr.state, sr.desired_date, sr.created_at,
-                       c.name AS category_name, cp.display_name AS contractor_name,
-                       p.status AS proposal_status, p.amount AS proposal_amount
-        FROM service_requests sr
-        INNER JOIN categories c ON c.id = sr.category_id
-        INNER JOIN contractor_profiles cp ON cp.user_id = sr.contractor_user_id
-        INNER JOIN supplier_profiles sp ON sp.user_id = :supplier_user_id
-        INNER JOIN supplier_categories sc ON sc.supplier_id = sp.id AND sc.category_id = sr.category_id
-        LEFT JOIN proposals p ON p.service_request_id = sr.id AND p.supplier_user_id = :proposal_user_id
-        WHERE sr.status IN ('aberta','em_cotacao')
-          AND (
-            (sp.state = sr.state AND sp.city = sr.city)
-            OR EXISTS (
-                SELECT 1 FROM supplier_regions sreg
-                WHERE sreg.supplier_id = sp.id AND sreg.state = sr.state AND sreg.city = sr.city
-            )
-          )
-          AND (sr.urgency <> 'agora' OR sp.emergency_service = 1)
-        ORDER BY (sr.urgency = 'agora') DESC, (sr.urgency = 'urgente') DESC, sr.created_at DESC";
-$stmt = $pdo->prepare($sql);
-$stmt->execute(['supplier_user_id' => $user['id'], 'proposal_user_id' => $user['id']]);
-$opportunities = $stmt->fetchAll();
+$matches = Marketplace::supplierOpportunityMatches($pdo, (int) $user['id']);
+$opportunities = [];
+
+if ($matches) {
+    $params = ['proposal_user_id' => $user['id']];
+    $placeholders = [];
+    foreach (array_keys($matches) as $index => $requestId) {
+        $key = 'request_' . $index;
+        $placeholders[] = ':' . $key;
+        $params[$key] = $requestId;
+    }
+
+    $sql = "SELECT sr.id, sr.title, sr.description, sr.urgency, sr.city, sr.state, sr.desired_date, sr.created_at,
+                   c.name AS category_name, cp.display_name AS contractor_name,
+                   p.status AS proposal_status, p.amount AS proposal_amount
+            FROM service_requests sr
+            INNER JOIN categories c ON c.id = sr.category_id
+            INNER JOIN contractor_profiles cp ON cp.user_id = sr.contractor_user_id
+            LEFT JOIN proposals p ON p.service_request_id = sr.id AND p.supplier_user_id = :proposal_user_id
+            WHERE sr.id IN (" . implode(',', $placeholders) . ")";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $opportunities = $stmt->fetchAll();
+
+    foreach ($opportunities as &$opportunity) {
+        $opportunity['distance_km'] = $matches[(int) $opportunity['id']] ?? null;
+    }
+    unset($opportunity);
+
+    $urgencyRank = ['normal' => 1, 'urgente' => 2, 'agora' => 3];
+    usort($opportunities, static function (array $a, array $b) use ($urgencyRank): int {
+        $rank = ($urgencyRank[$b['urgency']] ?? 0) <=> ($urgencyRank[$a['urgency']] ?? 0);
+        if ($rank !== 0) return $rank;
+
+        $aDistance = $a['distance_km'];
+        $bDistance = $b['distance_km'];
+        if ($aDistance === null && $bDistance !== null) return 1;
+        if ($aDistance !== null && $bDistance === null) return -1;
+        if ($aDistance !== null && $bDistance !== null) {
+            $distanceCmp = $aDistance <=> $bDistance;
+            if ($distanceCmp !== 0) return $distanceCmp;
+        }
+        return strcmp((string) $b['created_at'], (string) $a['created_at']);
+    });
+}
+
+try {
+    $unreadNotifications = Notifications::unreadCount($pdo, (int) $user['id']);
+} catch (Throwable $exception) {
+    $unreadNotifications = 0;
+}
 
 $urgencyLabels = ['normal' => 'Normal', 'urgente' => 'Urgente', 'agora' => 'Preciso Agora'];
 ?>
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Oportunidades — <?= e((string) ($config['name'] ?? 'CondoConecta')) ?></title><link rel="stylesheet" href="assets/css/app.css"></head>
 <body class="dashboard-page">
-<header class="topbar"><div class="container nav"><a class="brand" href="painel.php">Condo<span>Conecta</span></a><nav><a href="minhas-propostas.php">Minhas propostas</a><a class="button button-ghost" href="painel.php">Painel</a></nav></div></header>
+<header class="topbar"><div class="container nav"><a class="brand" href="painel.php">Condo<span>Conecta</span></a><nav><a href="localizacao-fornecedor.php">Minha localização</a><a href="notificacoes.php">🔔 Notificações<?= $unreadNotifications > 0 ? ' (' . $unreadNotifications . ')' : '' ?></a><a href="minhas-propostas.php">Minhas propostas</a><a class="button button-ghost" href="painel.php">Painel</a></nav></div></header>
 <main class="container dashboard-shell">
-    <div class="page-heading"><div><span class="badge">FORNECEDOR</span><h1>Oportunidades compatíveis</h1><p>Somente solicitações das suas categorias e regiões aparecem aqui. “Preciso Agora” exige atendimento emergencial ativado.</p></div></div>
+    <div class="page-heading"><div><span class="badge">FORNECEDOR</span><h1>Oportunidades compatíveis</h1><p>Chamados urgentes vêm primeiro. Quando há geolocalização nos dois lados, os mais próximos aparecem antes e o seu raio máximo de atendimento é respeitado.</p></div></div>
     <?php if (!$opportunities): ?>
-        <div class="empty-state"><h2>Nenhuma oportunidade compatível agora</h2><p>Confira se você selecionou categorias e regiões no perfil de serviços.</p><a class="button button-secondary" href="perfil-fornecedor.php">Revisar perfil</a></div>
+        <div class="empty-state"><h2>Nenhuma oportunidade compatível agora</h2><p>Confira categorias, regiões, atendimento emergencial e sua localização de referência.</p><div class="form-actions"><a class="button button-secondary" href="perfil-fornecedor.php">Revisar perfil</a><a class="button button-ghost" href="localizacao-fornecedor.php">Configurar localização</a></div></div>
     <?php else: ?>
         <section class="opportunity-grid">
             <?php foreach ($opportunities as $opportunity): ?>
                 <article class="opportunity-card <?= $opportunity['urgency'] === 'agora' ? 'opportunity-now' : '' ?>">
-                    <div class="request-meta"><span class="status-tag <?= $opportunity['urgency'] === 'agora' ? 'status-danger' : ($opportunity['urgency'] === 'urgente' ? 'status-pending' : 'status-muted') ?>"><?= e($urgencyLabels[$opportunity['urgency']] ?? $opportunity['urgency']) ?></span><span><?= e((string) $opportunity['category_name']) ?></span></div>
+                    <div class="request-meta"><span class="status-tag <?= $opportunity['urgency'] === 'agora' ? 'status-danger' : ($opportunity['urgency'] === 'urgente' ? 'status-pending' : 'status-muted') ?>"><?= e($urgencyLabels[$opportunity['urgency']] ?? $opportunity['urgency']) ?></span><span><?= e((string) $opportunity['category_name']) ?></span><?php if ($opportunity['distance_km'] !== null): ?><span class="status-tag status-ok">≈ <?= e(number_format((float) $opportunity['distance_km'], 1, ',', '.')) ?> km</span><?php else: ?><span class="status-tag status-muted">Match por região</span><?php endif; ?></div>
                     <h2><?= e((string) $opportunity['title']) ?></h2>
                     <p><?= e(mb_strimwidth((string) $opportunity['description'], 0, 180, '…')) ?></p>
                     <div class="opportunity-info"><span>📍 <?= e((string) $opportunity['city']) ?> • <?= e((string) $opportunity['state']) ?></span><span>🏢 <?= e((string) $opportunity['contractor_name']) ?></span><?php if ($opportunity['desired_date']): ?><span>📅 <?= e(date('d/m/Y', strtotime((string) $opportunity['desired_date']))) ?></span><?php endif; ?></div>

@@ -19,7 +19,7 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 2. Perfil do fornecedor, categorias e regiões atendidas
 3. Perfil público e portfólio
 4. Solicitação de serviço com fotos protegidas
-5. Matching por categoria/região
+5. Matching por categoria/região e distância
 6. Painel de oportunidades do fornecedor
 7. Envio e edição de propostas
 8. Comparação e contratação
@@ -27,7 +27,8 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 10. Avaliação pós-serviço
 11. Solicitações urgentes (“Preciso Agora”)
 12. Histórico de contratações
-13. Base para planos pagos do contratante
+13. Notificações internas de urgência
+14. Base para planos pagos do contratante
 
 ## Stack inicial
 
@@ -47,6 +48,7 @@ Migrações atuais:
 - `001_supplier_portfolio.sql` — cria o portfólio público dos fornecedores.
 - `002_service_request_photos.sql` — adiciona fotos protegidas às solicitações de serviço.
 - `003_hiring_timeline.sql` — adiciona o marco de início da execução da contratação.
+- `004_geolocation_notifications.sql` — adiciona coordenadas do fornecedor e a central de notificações internas.
 
 ## Perfil do fornecedor
 
@@ -57,7 +59,8 @@ O fornecedor pode configurar gratuitamente:
 - cidade base e raio de atendimento;
 - cidades/regiões atendidas;
 - participação em chamados emergenciais (“Preciso Agora”);
-- portfólio de trabalhos realizados.
+- portfólio de trabalhos realizados;
+- localização opcional para matching por distância real.
 
 Telefone e e-mail não são exibidos diretamente no perfil público. O contato é liberado entre fornecedor e contratante somente após o aceite de uma proposta e a criação da contratação.
 
@@ -65,13 +68,24 @@ Telefone e e-mail não são exibidos diretamente no perfil público. O contato �
 
 O contratante pode publicar uma solicitação com categoria, descrição, localidade, data desejada, urgência e até cinco fotos. As fotos ficam em `storage/request-photos`, fora da pasta pública, e só são servidas por uma rota autenticada.
 
-O matching inicial usa:
+A localização do chamado é opcional. Quando contratante e fornecedor permitem geolocalização, o CondoConecta calcula a distância entre os dois pontos e respeita o raio máximo configurado pelo fornecedor. Quando uma das coordenadas não existe, o sistema mantém o fallback por cidade/região cadastrada.
+
+O matching considera:
 
 - categoria selecionada pelo fornecedor;
-- cidade base ou cidade/região cadastrada pelo fornecedor;
+- distância real dentro do raio configurado, quando houver coordenadas nos dois lados;
+- cidade base ou cidade/região cadastrada como fallback;
 - atendimento emergencial habilitado quando a solicitação for “Preciso Agora”.
 
-O fornecedor compatível vê a oportunidade, acessa os detalhes e pode enviar ou editar gratuitamente uma proposta com valor, prazo, garantia e observações.
+O fornecedor compatível vê a oportunidade, acessa os detalhes e pode enviar ou editar gratuitamente uma proposta com valor, prazo, garantia e observações. As oportunidades são priorizadas por urgência e, dentro do mesmo nível, por proximidade quando a distância está disponível.
+
+## Preciso Agora e notificações
+
+Chamados `Urgente` e `Preciso Agora` geram notificações internas para fornecedores compatíveis. O fornecedor possui uma central de notificações com avisos não lidos e acesso direto à oportunidade.
+
+Nesta fase, a notificação é interna ao sistema. Push notification e e-mail instantâneo ficam planejados para a etapa de expansão/PWA.
+
+A coordenada do fornecedor não é exibida no perfil público e a coordenada do chamado não é mostrada diretamente aos fornecedores; ela é usada apenas para o cálculo de distância e elegibilidade.
 
 ## Contratação e confiança
 
@@ -87,13 +101,11 @@ Ao aceitar uma proposta:
 
 O fornecedor pode registrar o início do serviço. O contratante confirma a conclusão e, após isso, pode avaliar qualidade, prazo, atendimento e custo-benefício. A média dessas avaliações passa a compor o histórico público do fornecedor.
 
-A geolocalização por distância real e o uso efetivo do raio em quilômetros serão implementados na fase específica de geolocalização.
-
 ## Segurança
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação e fotos de solicitações exigem autorização para visualização.
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação, fotos de solicitações exigem autorização para visualização e coordenadas são usadas somente para matching interno.
 
 ## Status
 

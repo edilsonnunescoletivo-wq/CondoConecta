@@ -43,11 +43,16 @@
 - [x] Indicadores de qualidade, prazo, atendimento e custo-benefício.
 - [x] Média de avaliações exibida no painel do fornecedor.
 
-## Fase 5 — Preciso Agora
+## Fase 5 — Preciso Agora e proximidade
 - [x] Disponibilidade emergencial básica por região.
-- [ ] Geolocalização/raio de atendimento.
-- [ ] Ordenação por proximidade.
-- [ ] Notificações em tempo útil.
+- [x] Geolocalização opcional do fornecedor.
+- [x] Geolocalização opcional da solicitação.
+- [x] Raio real de atendimento em quilômetros.
+- [x] Cálculo de distância por coordenadas.
+- [x] Fallback automático para cidade/região quando não houver localização.
+- [x] Ordenação das oportunidades por urgência e proximidade.
+- [x] Notificações internas para chamados urgentes e Preciso Agora.
+- [ ] Push notification/e-mail instantâneo fora do sistema.
 
 ## Fase 6 — Monetização
 - [ ] Planos para condomínio e administradora.
@@ -63,6 +68,7 @@
 
 ## Fase 8 — Expansão
 - [ ] PWA e/ou aplicativo móvel.
+- [ ] Push notifications.
 - [ ] Novas regiões.
 - [ ] Painel comercial e métricas de marketplace.
 - [ ] Programa de indicação.

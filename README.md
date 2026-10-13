@@ -17,7 +17,7 @@ O CondoConecta conecta condomínios a fornecedores locais qualificados. O cadast
 
 1. Cadastro e autenticação
 2. Perfil do fornecedor, categorias e regiões atendidas
-3. Perfil público e portfólio
+3. Perfil público, portfólio e Fornecedor Verificado
 4. Solicitação de serviço com fotos protegidas
 5. Matching por categoria/região e distância
 6. Painel de oportunidades do fornecedor
@@ -49,8 +49,9 @@ Migrações atuais:
 - `002_service_request_photos.sql` — adiciona fotos protegidas às solicitações de serviço.
 - `003_hiring_timeline.sql` — adiciona o marco de início da execução da contratação.
 - `004_geolocation_notifications.sql` — adiciona coordenadas do fornecedor e a central de notificações internas.
+- `005_supplier_verification.sql` — adiciona metadados de revisão, validade e gestão do selo de fornecedor verificado.
 
-## Perfil do fornecedor
+## Perfil e verificação do fornecedor
 
 O fornecedor pode configurar gratuitamente:
 
@@ -60,9 +61,16 @@ O fornecedor pode configurar gratuitamente:
 - cidades/regiões atendidas;
 - participação em chamados emergenciais (“Preciso Agora”);
 - portfólio de trabalhos realizados;
-- localização opcional para matching por distância real.
+- localização opcional para matching por distância real;
+- documentos para análise administrativa.
 
-Telefone e e-mail não são exibidos diretamente no perfil público. O contato é liberado entre fornecedor e contratante somente após o aceite de uma proposta e a criação da contratação.
+Os documentos aceitos nesta fase são PDF, JPG e PNG, com limite de 10 MB por arquivo. Eles ficam em `storage/supplier-documents`, fora da pasta pública, e são servidos somente por rota autenticada ao próprio fornecedor ou a um administrador.
+
+A administração pode aprovar ou rejeitar cada documento com observação. O selo **Fornecedor Verificado** não é concedido automaticamente por upload: ele depende de análise administrativa e exige pelo menos um documento-base de identificação aprovado e ainda válido. Se essa condição deixar de existir, o selo é revogado automaticamente quando o perfil é validado pelo sistema.
+
+O perfil público mostra apenas o selo e a informação de que a documentação-base foi revisada; os documentos brutos não são expostos aos contratantes.
+
+Telefone e e-mail também não são exibidos diretamente no perfil público. O contato é liberado entre fornecedor e contratante somente após o aceite de uma proposta e a criação da contratação.
 
 ## Marketplace implementado
 
@@ -105,7 +113,7 @@ O fornecedor pode registrar o início do serviço. O contratante confirma a conc
 
 Nenhuma credencial deve ser versionada. Use `.env` local baseado em `.env.example`.
 
-Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação, fotos de solicitações exigem autorização para visualização e coordenadas são usadas somente para matching interno.
+Senhas usam hash seguro, formulários sensíveis usam proteção CSRF, dados pessoais de contato não ficam expostos antes da contratação, fotos e documentos usam armazenamento privado com rotas autenticadas e coordenadas são usadas somente para matching interno.
 
 ## Status
 
